@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
+	"text/template"
+
 	iammanagerv1alpha1 "github.com/keikoproj/iam-manager/api/v1alpha1"
 	"github.com/keikoproj/iam-manager/internal/config"
 	"github.com/keikoproj/iam-manager/pkg/log"
-	"k8s.io/api/core/v1"
-	"strings"
-	"text/template"
+	v1 "k8s.io/api/core/v1"
 )
 
 //GetTrustPolicy constructs trust policy
@@ -26,8 +27,7 @@ func GetTrustPolicy(ctx context.Context, role *iammanagerv1alpha1.Iamrole) (stri
 
 	//Construct AssumeRoleWithWebIdentity
 	if flag {
-
-		hostPath := fmt.Sprintf("%s", strings.TrimPrefix(config.Props.OIDCIssuerUrl(), "https://"))
+		hostPath := strings.TrimPrefix(config.Props.OIDCIssuerUrl(), "https://")
 		statement := iammanagerv1alpha1.TrustPolicyStatement{
 			Effect: "Allow",
 			Action: "sts:AssumeRoleWithWebIdentity",
