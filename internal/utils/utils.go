@@ -6,17 +6,18 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	iammanagerv1alpha1 "github.com/keikoproj/iam-manager/api/v1alpha1"
-	"github.com/keikoproj/iam-manager/internal/config"
-	"github.com/keikoproj/iam-manager/pkg/log"
-	"k8s.io/api/core/v1"
 	"strings"
 	"text/template"
+
+	iammanagerv1alpha1 "github.com/keikoproj/iam-manager/api/v1alpha1"
+	"github.com/keikoproj/iam-manager/internal/config"
+	logger "github.com/keikoproj/iam-manager/pkg/log"
+	v1 "k8s.io/api/core/v1"
 )
 
 //GetTrustPolicy constructs trust policy
 func GetTrustPolicy(ctx context.Context, role *iammanagerv1alpha1.Iamrole) (string, error) {
-	log := log.Logger(ctx, "internal.utils.utils", "GetTrustPolicy")
+	log := logger.Logger(ctx, "internal.utils.utils", "GetTrustPolicy")
 	tPolicy := role.Spec.AssumeRolePolicyDocument
 
 	var statements []iammanagerv1alpha1.TrustPolicyStatement
@@ -24,9 +25,8 @@ func GetTrustPolicy(ctx context.Context, role *iammanagerv1alpha1.Iamrole) (stri
 	// Is it IRSA use case
 	flag, saName := ParseIRSAAnnotation(ctx, role)
 
-	//Construct AssumeRoleWithWebIdentity
+	// Construct AssumeRoleWithWebIdentity
 	if flag {
-
 		hostPath := fmt.Sprintf("%s", strings.TrimPrefix(config.Props.OIDCIssuerUrl(), "https://"))
 		statement := iammanagerv1alpha1.TrustPolicyStatement{
 			Effect: "Allow",
@@ -88,7 +88,7 @@ type Fields struct {
 
 //DefaultTrustPolicy converts the config map variable string to v1alpha1.AssumeRolePolicyDocument and executes Go Template if any
 func DefaultTrustPolicy(ctx context.Context, trustPolicyDoc string, ns string) (*iammanagerv1alpha1.AssumeRolePolicyDocument, error) {
-	log := log.Logger(ctx, "internal.utils.utils", "defaultTrustPolicy")
+	log := logger.Logger(ctx, "internal.utils.utils", "defaultTrustPolicy")
 	if trustPolicyDoc == "" {
 		msg := "default trust policy is not provided in the config map. Request must provide trust policy in the CR"
 		err := errors.New(msg)
@@ -131,7 +131,7 @@ func DefaultTrustPolicy(ctx context.Context, trustPolicyDoc string, ns string) (
 // the supplied iam.role.pattern. This pattern can be customized by the
 // end-user.
 func GenerateRoleName(ctx context.Context, iamRole *iammanagerv1alpha1.Iamrole, props config.Properties, ns *v1.Namespace) (string, error) {
-	log := log.Logger(ctx, "internal.utils.utils", "GenerateRoleName")
+	log := logger.Logger(ctx, "internal.utils.utils", "GenerateRoleName")
 
 	//For already created roles - don't change the name but pick it up from the status
 	if iamRole.Status.RoleName != "" {
@@ -172,7 +172,7 @@ func GenerateRoleName(ctx context.Context, iamRole *iammanagerv1alpha1.Iamrole, 
 //parseAnnotations parses annotations attached to iam role resource and returns the value if found
 // input: Name of the annotation, IamRole resource
 func parseAnnotations(ctx context.Context, name string, annotations map[string]string) (bool, string) {
-	log := log.Logger(ctx, "internal.utils.utils", "ParseIRSAAnnotation")
+	log := logger.Logger(ctx, "internal.utils.utils", "ParseIRSAAnnotation")
 	flag := false
 	response := ""
 	//Look for the specific annotation in iam role CR
@@ -199,7 +199,7 @@ func ParseTagsAnnotation(ctx context.Context, iamRole *iammanagerv1alpha1.Iamrol
 	return parseAnnotations(ctx, config.IamManagerTagsAnnotation, iamRole.Annotations)
 }
 
-//ParseTagsAnnotation parses IamRole tags annotation and responds if annotation exists
+// ParseTagsAnnotation parses IamRole tags annotation and responds if annotation exists
 func ParseIRSARegionalEndpointAnnotation(ctx context.Context, sa *v1.ServiceAccount) (bool, string) {
 	return parseAnnotations(ctx, config.IRSARegionalEndpointAnnotation, sa.Annotations)
 }
